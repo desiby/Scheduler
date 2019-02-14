@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane id="AnchorPane" fx:id="customerPane" prefHeight="668.0" prefWidth="1853.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="View_Controller.customers.CustomersController">
+   <children>
+      <TextField fx:id="txtCustomerName" layoutX="14.0" layoutY="111.0" prefHeight="27.0" prefWidth="150.0" promptText="Customer Name" />
+      <Button fx:id="btnSaveCustomer" layoutX="14.0" layoutY="576.0" mnemonicParsing="false" onAction="#btnSaveCustomer_clicked" prefHeight="38.0" prefWidth="75.0" text="Save" />
+      <Button fx:id="btnDeleteCustomer" layoutX="265.0" layoutY="576.0" mnemonicParsing="false" onAction="#btnDeleteCustomer_clicked" prefHeight="38.0" prefWidth="75.0" text="Delete" />
+      <Button fx:id="btnClearCustomer" layoutX="390.0" layoutY="576.0" mnemonicParsing="false" onAction="#btnClearCustomer_clicked" prefHeight="38.0" prefWidth="78.0" text="Clear" />
+      <Button fx:id="btnBack" layoutX="515.0" layoutY="576.0" mnemonicParsing="false" onAction="#btnBack_clicked" prefHeight="38.0" prefWidth="78.0" text="Back" />
+      <Label layoutX="487.0" layoutY="27.0" text="CUSTOMERS DATA" textFill="#5317d3">
+         <font>
+            <Font size="18.0" />
+         </font>
+      </Label>
+      <TextField fx:id="txtAddress" layoutX="14.0" layoutY="171.0" prefHeight="27.0" prefWidth="150.0" promptText="Address" />
+      <TextField fx:id="txtAddress2" layoutX="14.0" layoutY="231.0" prefHeight="27.0" prefWidth="150.0" promptText="Address 2" />
+      <TextField fx:id="txtPostalCode" layoutX="14.0" layoutY="417.0" prefHeight="27.0" prefWidth="150.0" promptText="Postal Code" />
+      <TextField fx:id="txtPhoneNumber" layoutX="14.0" layoutY="295.0" prefHeight="27.0" prefWidth="150.0" promptText="Phone Number" />
+      <ComboBox fx:id="cbxActive" layoutX="14.0" layoutY="482.0" prefWidth="150.0" promptText="Active" />
+      <ChoiceBox fx:id="cbxCity" layoutX="14.0" layoutY="354.0" prefWidth="150.0" />
+      <TableView fx:id="customerDataTableView" layoutX="207.0" layoutY="151.0" prefHeight="364.0" prefWidth="965.0">
+        <columns>
+          <TableColumn fx:id="col_custId" prefWidth="163.0" text="Customer ID" />
+          <TableColumn fx:id="col_name" minWidth="0.0" prefWidth="145.0" text="Customer Name" />
+            <TableColumn fx:id="col_addr" minWidth="0.0" prefWidth="162.0" text="Address" />
+            <TableColumn fx:id="col_addr2" minWidth="0.0" prefWidth="162.0" text="Address 2" />
+            <TableColumn fx:id="col_phone" minWidth="0.0" prefWidth="162.0" text="Phone Number" />
+            <TableColumn fx:id="col_city" minWidth="0.0" prefWidth="162.0" text="City" />
+            <TableColumn fx:id="col_postalCode" minWidth="0.0" prefWidth="162.0" text="Postal Code" />
+            <TableColumn fx:id="col_active" minWidth="0.0" prefWidth="162.0" text="Active" />
+            <TableColumn fx:id="col_createDate" minWidth="0.0" prefWidth="162.0" text="Create date" />
+            <TableColumn fx:id="col_lastUpdate" prefWidth="163.0" text="Last Update" />
+        </columns>
+      </TableView>
+      <Button fx:id="btnEditCustomer" layoutX="138.0" layoutY="576.0" mnemonicParsing="false" onAction="#btnEditCustomer_clicked" prefHeight="38.0" prefWidth="75.0" text="Edit" />
+   </children>
+</AnchorPane>
