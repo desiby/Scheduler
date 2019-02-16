@@ -5,11 +5,14 @@
  */
 package View_Controller.appointments;
 
-import Model.Appointment;
+import Model.AppointmentDetails;
+import Model.CustomerDetails;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,6 +20,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
 import javafx.collections.FXCollections;
@@ -33,6 +37,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
 import static scheduler.Utils.conn;
 import static scheduler.Utils.resultSet;
@@ -69,23 +74,29 @@ public class AppointmentController implements Initializable {
     
     //tablecolumns
     @FXML
-    private TableColumn<Appointment, LocalDate> col_start;
-
-    @FXML
-    private TableColumn<Appointment, LocalDate> col_end;
-
-    @FXML
-    private TableColumn<Appointment, LocalDate> col_createDate;
+    private TableColumn<AppointmentDetails, Integer> col_apptId;
     
     @FXML
-    private TableColumn<Appointment, String> col_type;
+    private TableColumn<AppointmentDetails, String> col_customerName;
+    
+    @FXML
+    private TableColumn<AppointmentDetails, ZonedDateTime> col_start;
 
     @FXML
-    private TableColumn<Appointment, LocalDate> col_lastUpdate;
+    private TableColumn<AppointmentDetails, ZonedDateTime> col_end;
+
+    @FXML
+    private TableColumn<AppointmentDetails, LocalDate> col_createDate;
+    
+    @FXML
+    private TableColumn<AppointmentDetails, String> col_type;
+
+    @FXML
+    private TableColumn<AppointmentDetails, LocalDate> col_lastUpdate;
     
     //tableview
      @FXML
-    private TableView<Appointment> appointmentTableView;
+    private TableView<AppointmentDetails> appointmentTableView;
 
     //datepicker
     @FXML
@@ -105,6 +116,8 @@ public class AppointmentController implements Initializable {
     private ChoiceBox<String> chbxType;
     
     
+    AppointmentDetails appointment = null;
+    private ObservableList<AppointmentDetails> appointmentList = FXCollections.observableArrayList();
 
     
     @FXML
@@ -258,8 +271,44 @@ public class AppointmentController implements Initializable {
         cbxEndTime.setItems(endTimeList);
         cbxEndTime.setValue(endTimeList.get(0));
         
-        
-        
+       
+       col_apptId.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
+       col_customerName.setCellValueFactory(new PropertyValueFactory<>("customerName"));
+       col_type.setCellValueFactory(new PropertyValueFactory<>("type"));
+       col_start.setCellValueFactory(new PropertyValueFactory<>("startTime"));
+       col_end.setCellValueFactory(new PropertyValueFactory<>("endTime"));
+       col_createDate.setCellValueFactory(new PropertyValueFactory<>("createDate"));
+       col_lastUpdate.setCellValueFactory(new PropertyValueFactory<>("lastUpdate"));
+       
+       selectSQL("select customer.customerId, customer.customerName, appointment.appointmentId, \n" +
+                "appointment.customerId, appointment.type, appointment.start, appointment.end, \n" +
+                "appointment.createDate, appointment.lastUpdate\n" +
+                "from U04FGv.appointment\n" +
+                "join U04FGv.customer\n" +
+                "on customer.customerId = appointment.customerId");
+       
+       try { 
+           DateTimeFormatter dateF = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            while(resultSet.next()){
+              int appointmentId = resultSet.getInt("appointmentId");
+              String customerName = resultSet.getString("CustomerName");
+              String aType = resultSet.getString("type");
+              Timestamp start = resultSet.getTimestamp("start");
+              Timestamp end = resultSet.getTimestamp("end");
+              Date createDate = resultSet.getDate("createDate");
+              Date lastUpdate = resultSet.getDate("lastUpdate");
+              
+              appointment = new AppointmentDetails(appointmentId, customerName, aType, start, end, 
+                      LocalDate.parse(new SimpleDateFormat("yyyy-MM-dd").format(createDate)),
+                      LocalDate.parse( new SimpleDateFormat("yyyy-MM-dd").format(lastUpdate)));
+              
+              appointmentList.add(appointment);
+              appointmentTableView.setItems(appointmentList);
+             }
+        } catch (SQLException ex) {
+            System.out.println("Error loading appointments from DB "+ ex);
+        }
+       
     } 
           
 }

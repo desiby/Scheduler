@@ -8,12 +8,12 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane id="AnchorPane" fx:id="appointmentPane" prefHeight="619.0" prefWidth="1615.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="View_Controller.appointments.AppointmentController">
+<AnchorPane id="AnchorPane" fx:id="appointmentPane" prefHeight="628.0" prefWidth="1339.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="View_Controller.appointments.AppointmentController">
    <children>
-      <TableView fx:id="appointmentTableView" layoutX="416.0" layoutY="134.0" prefHeight="377.0" prefWidth="1353.0">
+      <TableView fx:id="appointmentTableView" layoutX="370.0" layoutY="134.0" prefHeight="377.0" prefWidth="893.0">
         <columns>
-          <TableColumn fx:id="col_customerName" prefWidth="170.0" text="Customer Name" />
-          <TableColumn fx:id="col_userName" minWidth="0.0" prefWidth="179.0" text="User Name" />
+          <TableColumn fx:id="col_apptId" prefWidth="170.0" text="Appoitment ID" />
+          <TableColumn fx:id="col_customerName" minWidth="0.0" prefWidth="179.0" text="Customer Name" />
             <TableColumn fx:id="col_type" minWidth="0.0" prefWidth="179.0" text="Type" />
             <TableColumn fx:id="col_start" minWidth="0.0" prefWidth="179.0" text="Start" />
             <TableColumn fx:id="col_end" minWidth="0.0" prefWidth="179.0" text="End" />
