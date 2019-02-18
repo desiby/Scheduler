@@ -17,13 +17,13 @@ public class AppointmentDetails {
     private int appointmentId;
     private String customerName;
     private String type;
-    private Timestamp startTime;
-    private Timestamp endTime;
+    private String startTime;
+    private String endTime;
     private LocalDate createDate;
     private LocalDate lastUpdate;
 
     public AppointmentDetails(int appointmentId, String customerName, String type, 
-            Timestamp startTime, Timestamp endTime, LocalDate createDate, LocalDate lastUpdate) {
+            String startTime, String endTime, LocalDate createDate, LocalDate lastUpdate) {
         this.appointmentId = appointmentId;
         this.customerName = customerName;
         this.type = type;
@@ -42,19 +42,19 @@ public class AppointmentDetails {
     }
    
     
-    public Timestamp getStartTime() {
+    public String getStartTime() {
         return startTime;
     }
 
-    public void setStartTime(Timestamp startTime) {
+    public void setStartTime(String startTime) {
         this.startTime = startTime;
     }
 
-    public Timestamp getEndTime() {
+    public String getEndTime() {
         return endTime;
     }
 
-    public void setEndTime(Timestamp endTime) {
+    public void setEndTime(String endTime) {
         this.endTime = endTime;
     }
 
