@@ -36,6 +36,7 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
@@ -119,6 +120,7 @@ public class AppointmentController implements Initializable {
     AppointmentDetails appointment = null;
     private ObservableList<AppointmentDetails> appointmentList = FXCollections.observableArrayList();
 
+    int selectedAppointmentId = 0;
     
     @FXML
     void save_clicked(ActionEvent event) throws SQLException {
@@ -229,6 +231,11 @@ public class AppointmentController implements Initializable {
      */
     @Override
       public void initialize(URL url, ResourceBundle rb) {
+       DateTimeFormatter dateTimeF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+       DateTimeFormatter timeF = DateTimeFormatter.ofPattern("HH:mm:ss");
+       DateTimeFormatter ampmTimeF = DateTimeFormatter.ofPattern("h:mm a");
+       DateTimeFormatter dateF = DateTimeFormatter.ofPattern("yyyy-MM-dd");  
+          
         ObservableList<String> customerNameList = FXCollections.observableArrayList();
         ObservableList<String> type = FXCollections.observableArrayList("A", "B", "C", "D");
         ObservableList<String> startTimeList = FXCollections.observableArrayList("9:00 AM","10:00 AM","11:00 AM","12:00 PM","1:00 PM","2:00 PM","3:00 PM","4:00 PM");
@@ -250,8 +257,57 @@ public class AppointmentController implements Initializable {
                         }
                 }
         });
+        //
+        //Pre-populate the form field upon double-clicking cell row for editing
+        appointmentTableView.setRowFactory(tv -> {
+            TableRow<AppointmentDetails> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
+                    AppointmentDetails rowData = row.getItem();
+                    //get id of selected customer
+                    selectedAppointmentId = rowData.getAppointmentId();
+                    btnSave.setDisable(true);
+                    cbxCustomerName.setValue(rowData.getCustomerName());
+                    chbxType.setValue(rowData.getType());
+                    selectSQL("select start, end from U04FGv.appointment where appointmentId = " +selectedAppointmentId+"");
+                    try {
+                        while(resultSet.next()){
+                           String start = resultSet.getString("start");
+                           String end = resultSet.getString("end");
+                           LocalDateTime utcStartDatetime = LocalDateTime.parse(start, dateTimeF);
+                           LocalDateTime utcEndDatetime = LocalDateTime.parse(end, dateTimeF);
+                           ZonedDateTime utcStartDefault = ZonedDateTime.of(utcStartDatetime, ZoneId.of("UTC"));
+                           ZonedDateTime utcEndDefault = ZonedDateTime.of(utcEndDatetime,ZoneId.of("UTC"));
+                           ZonedDateTime defaultStart = utcStartDefault.withZoneSameInstant(TimeZone.getDefault().toZoneId());
+                           ZonedDateTime defaultEnd = utcEndDefault.withZoneSameInstant(TimeZone.getDefault().toZoneId());
+                           LocalDate date = defaultStart.toLocalDate();
+                           LocalTime startTime = defaultStart.toLocalTime();
+                           LocalTime endTime = defaultEnd.toLocalTime();
+                           String sTime = startTime.format(ampmTimeF);
+                           String eTime = endTime.format(ampmTimeF);
+                           if(date.isBefore(LocalDate.now())){
+                              System.out.println("Cannot edit this appointment, already been proccessed"); 
+                              btnEdit.setDisable(true);
+                           }else{
+                            appointmentDatePicker.setValue(date);
+                            btnEdit.setDisable(false);
+                            btnSave.setDisable(true);
+                           }
+                           cbxStartTime.setValue(sTime);
+                           cbxEndTime.setValue(eTime);
+                        }
+                    }catch (SQLException ex) {
+                        System.out.println("Error loading datetime from DB "+ ex);
+                    } 
+                    
+                    System.out.println("Double click on: "+rowData.getCustomerName());
+                }
+            });
+            return row ;
+        });
+        
          
-        //Loadind Customer from database
+        //Loading Customer from database
         selectSQL("select customerName from U04FGv.customer");
         try{
             while(resultSet.next()){
@@ -288,17 +344,30 @@ public class AppointmentController implements Initializable {
                 "on customer.customerId = appointment.customerId");
        
        try { 
-           DateTimeFormatter dateF = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             while(resultSet.next()){
+                
               int appointmentId = resultSet.getInt("appointmentId");
               String customerName = resultSet.getString("CustomerName");
               String aType = resultSet.getString("type");
-              Timestamp start = resultSet.getTimestamp("start");
-              Timestamp end = resultSet.getTimestamp("end");
+              String start = resultSet.getString("start");
+              String end = resultSet.getString("end");
               Date createDate = resultSet.getDate("createDate");
               Date lastUpdate = resultSet.getDate("lastUpdate");
               
-              appointment = new AppointmentDetails(appointmentId, customerName, aType, start, end, 
+              //convert utc time in database to default time zone to load in tableview
+              //parse utc into LocalDateTime
+              LocalDateTime utcStartDatetime = LocalDateTime.parse(start, dateTimeF);
+              LocalDateTime utcEndDatetime = LocalDateTime.parse(end, dateTimeF);
+              ZonedDateTime utcStartDefault = ZonedDateTime.of(utcStartDatetime, ZoneId.of("UTC"));
+              ZonedDateTime utcEndDefault = ZonedDateTime.of(utcEndDatetime,ZoneId.of("UTC"));
+              ZonedDateTime defaultStart = utcStartDefault.withZoneSameInstant(TimeZone.getDefault().toZoneId());
+              ZonedDateTime defaultEnd = utcEndDefault.withZoneSameInstant(TimeZone.getDefault().toZoneId());
+              //convert results to string
+              String dfStart = defaultStart.format(dateTimeF);
+              String dfEnd = defaultEnd.format(dateTimeF);
+
+              
+              appointment = new AppointmentDetails(appointmentId, customerName, aType, dfStart, dfEnd, 
                       LocalDate.parse(new SimpleDateFormat("yyyy-MM-dd").format(createDate)),
                       LocalDate.parse( new SimpleDateFormat("yyyy-MM-dd").format(lastUpdate)));
               
