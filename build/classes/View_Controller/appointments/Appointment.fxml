@@ -28,7 +28,7 @@
       </Label>
       <Button fx:id="btnSave" layoutX="148.0" layoutY="555.0" mnemonicParsing="false" onAction="#save_clicked" prefHeight="39.0" prefWidth="94.0" text="Save" />
       <Button fx:id="btnEdit" layoutX="275.0" layoutY="555.0" mnemonicParsing="false" onAction="#edit_clicked" prefHeight="39.0" prefWidth="94.0" text="Edit" />
-      <Button fx:id="btnClear" layoutX="405.0" layoutY="555.0" mnemonicParsing="false" onAction="#clear_clicked" prefHeight="39.0" prefWidth="85.0" text="Clear" />
+      <Button fx:id="btnStartOver" layoutX="405.0" layoutY="555.0" mnemonicParsing="false" onAction="#startOver_clicked" prefHeight="39.0" prefWidth="106.0" text="Start Over" />
       <Button fx:id="btnDelete" layoutX="537.0" layoutY="555.0" mnemonicParsing="false" onAction="#delete_click" prefHeight="39.0" prefWidth="94.0" text="Delete" />
       <Button fx:id="btnBack" layoutX="672.0" layoutY="555.0" mnemonicParsing="false" onAction="#back_clicked" prefHeight="39.0" prefWidth="94.0" text="Back" />
       <DatePicker fx:id="appointmentDatePicker" editable="false" layoutX="45.0" layoutY="339.0" prefHeight="39.0" prefWidth="254.0" promptText="Appointment Date" />

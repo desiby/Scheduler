@@ -15,6 +15,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.layout.AnchorPane;
+import scheduler.Utils;
 
 /**
  * FXML Controller class
@@ -38,26 +39,20 @@ public class DashboardController implements Initializable {
     @FXML
     void btnLogout_clicked(ActionEvent event) throws IOException, SQLException {
         //back to login screen
-        FXMLLoader loader = new FXMLLoader();
-        loader.setLocation(getClass().getResource("/View_Controller/mainscreen/MainScreen.fxml"));
-        AnchorPane pane = loader.load();
-        dashbPane.getChildren().setAll(pane);   
+        Utils utils = new Utils();
+        utils.navigate.navigateTo(dashbPane, "/View_Controller/mainscreen/MainScreen.fxml");  
     }
     
     @FXML
     void btnAppointments_Clicked(ActionEvent event) throws IOException {
-       FXMLLoader loader = new FXMLLoader();
-       loader.setLocation(getClass().getResource("/View_Controller/appointments/Appointment.fxml"));
-       AnchorPane pane = loader.load();
-       dashbPane.getChildren().setAll(pane);
+       Utils utils = new Utils();
+       utils.navigate.navigateTo(dashbPane, "/View_Controller/appointments/Appointment.fxml");  
     }
 
     @FXML
     void btnCustomers_Clicked(ActionEvent event) throws IOException {
-       FXMLLoader loader = new FXMLLoader();
-       loader.setLocation(getClass().getResource("/View_Controller/customers/Customers.fxml"));
-       AnchorPane pane = loader.load();
-       dashbPane.getChildren().setAll(pane);
+       Utils utils = new Utils();
+       utils.navigate.navigateTo(dashbPane, "/View_Controller/customers/Customers.fxml");  
     }
 
     /**

@@ -16,6 +16,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
+import scheduler.Inavigation;
 import scheduler.Utils;
 import static scheduler.Utils.closeConnection;
 import static scheduler.Utils.connectToDB;
@@ -88,11 +89,9 @@ public class MainScreenController {
           System.out.println(username + " logged in at" + LocalDateTime.now());
           outputLog.close();
           
-          // then GO TO DASHBOARD
-          FXMLLoader loader = new FXMLLoader();
-          loader.setLocation(getClass().getResource("/View_Controller/dashboard/Dashboard.fxml"));
-          AnchorPane pane = loader.load();
-          rootPane.getChildren().setAll(pane);
+          // then NAVIGATE TO DASHBOARD
+            Utils utils = new Utils();
+            utils.navigate.navigateTo(rootPane, "/View_Controller/dashboard/Dashboard.fxml");
         }
       
     }

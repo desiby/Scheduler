@@ -1,4 +1,4 @@
-/*
+ /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -6,12 +6,10 @@
 package View_Controller.appointments;
 
 import Model.AppointmentDetails;
-import Model.CustomerDetails;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -31,6 +29,7 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
@@ -38,9 +37,12 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
+import scheduler.Utils;
 import static scheduler.Utils.conn;
+import static scheduler.Utils.insertOrUpdateOrDeleteSQL;
 import static scheduler.Utils.resultSet;
 import static scheduler.Utils.selectSQL;
 import static scheduler.Utils.userSession;
@@ -70,7 +72,7 @@ public class AppointmentController implements Initializable {
     private Button btnEdit;
 
     @FXML
-    private Button btnClear;
+    private Button btnStartOver;
     
     
     //tablecolumns
@@ -118,6 +120,7 @@ public class AppointmentController implements Initializable {
     
     
     AppointmentDetails appointment = null;
+    
     private ObservableList<AppointmentDetails> appointmentList = FXCollections.observableArrayList();
 
     int selectedAppointmentId = 0;
@@ -199,24 +202,143 @@ public class AppointmentController implements Initializable {
        prepStatement.setInt(14, userId);
        
        resultAppointment = prepStatement.executeUpdate();
-       System.out.println(resultAppointment + " row successfuly inserted");
+       
+       Utils utils = new Utils();
+       utils.successMessage.showSuccess("Success", "Successfuly saved!", "Appointment details successfuly saved in database!");
     }
 
+    /**
+     * Edit an appointment
+     * @param event
+     * @throws SQLException 
+     */
     @FXML
-    void edit_clicked(ActionEvent event) {
+    void edit_clicked(ActionEvent event) throws SQLException {
 
+        //Values from tableView row to b edited
+        String customerName = cbxCustomerName.getValue();
+        String type = chbxType.getValue();
+        LocalDate appoitmentDate = appointmentDatePicker.getValue();
+        String startTime = cbxStartTime.getValue();
+        String endTime = cbxEndTime.getValue();
+        
+        int resultAppointment = 0;
+        int customerId = 0;
+        int userId = 0;
+        
+        //grab customerId for insertion
+        if(customerName != null){
+            selectSQL("select customerId from U04FGv.customer where customerName = "+"'"+customerName+"'"+"");
+            try {
+                while(resultSet.next()){
+                   int id = resultSet.getInt("customerId");
+                   customerId = id;
+                }
+            } catch (SQLException ex) {
+                System.out.println("Error loading customerId from DB "+ ex);
+            }
+        }
+        //-----grab userId for insertion
+        selectSQL("select userId from U04FGv.user where userName = "+"'"+userSession+"'"+"");
+           try {
+                while(resultSet.next()){
+                   int id = resultSet.getInt("userId");
+                   userId = id;
+                }
+            } catch (SQLException ex) {
+                System.out.println("Error loading userId from DB "+ ex);
+            }
+        
+        //------Grab date and time, concatenate then convert to UTC-------------
+       //define formatters
+       DateTimeFormatter dateTimeF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+       DateTimeFormatter timeF = DateTimeFormatter.ofPattern("HH:mm:ss");
+       DateTimeFormatter ampmTimeF = DateTimeFormatter.ofPattern("h:mm a");
+       DateTimeFormatter dateF = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+       //grab date and time from form and parse them
+       LocalTime sTime = LocalTime.parse(startTime, ampmTimeF);
+       LocalTime eTime = LocalTime.parse(endTime, ampmTimeF);
+       String startDateTimeStr = appoitmentDate.format(dateF)+" "+sTime.format(timeF);
+       String endDatetTimeStr = appoitmentDate.format(dateF)+" "+eTime.format(timeF);
+       //convert to utc
+       LocalDateTime dftStartDatetime = LocalDateTime.parse(startDateTimeStr, dateTimeF);
+       LocalDateTime dftEndDatetime = LocalDateTime.parse(endDatetTimeStr, dateTimeF);
+       ZonedDateTime zdtStartDefault = ZonedDateTime.of(dftStartDatetime, TimeZone.getDefault().toZoneId());
+       ZonedDateTime zdtEndDefault = ZonedDateTime.of(dftEndDatetime, TimeZone.getDefault().toZoneId());
+       ZonedDateTime zdtStartUTC = zdtStartDefault.withZoneSameInstant(ZoneId.of("UTC"));
+       ZonedDateTime zdtEndUTC = zdtEndDefault.withZoneSameInstant(ZoneId.of("UTC"));
+       //utc format to go in mysql
+       String utcSDateTimeStr = zdtStartUTC.format(dateTimeF);
+       String utcEDateTimeStr = zdtEndUTC.format(dateTimeF);
+        
+       PreparedStatement prepStatement = conn.prepareStatement("update U04FGv.appointment set customerId =?, title =?, description=?, "
+               + "location=?, contact=?, url=?, start=?, end=?, createDate=?, "
+               + "createdBy =?, lastUpdate=?, lastUpdateBy=?, type=?, userId=? where appointmentId = "+selectedAppointmentId+"");
+       
+       prepStatement.setInt(1, customerId);
+       prepStatement.setString(2, "N/A");
+       prepStatement.setString(3, "N/A");
+       prepStatement.setString(4, "N/A");
+       prepStatement.setString(5, "N/A");
+       prepStatement.setString(6, "N/A");
+       prepStatement.setString(7, utcSDateTimeStr);
+       prepStatement.setString(8, utcEDateTimeStr);
+       prepStatement.setString(9, LocalDate.now().format(dateF));
+       prepStatement.setString(10, userSession);
+       prepStatement.setString(11, LocalDate.now().format(dateF));
+       prepStatement.setString(12, userSession);
+       prepStatement.setString(13, type);
+       prepStatement.setInt(14, userId);
+       
+       resultAppointment = prepStatement.executeUpdate();
+       
+       Alert alert = new Alert(Alert.AlertType.INFORMATION);
+       alert.setTitle("Update");
+       alert.setHeaderText("Updated!");
+       alert.setContentText("Appointment details successfuly updated in database!");
+       alert.showAndWait();
+       
+       //System.out.println(resultAppointment + " row successfuly updated");
     }
 
+    /**
+     * Reset for insertion
+     * @param event 
+     */
     @FXML
-    void clear_clicked(ActionEvent event) {
-
+    void startOver_clicked(ActionEvent event) {
+      btnEdit.setDisable(true);
+      btnSave.setDisable(false);
     }
 
+    /**
+     * Delete an Appointment
+     * @param event 
+     */
     @FXML
     void delete_click(ActionEvent event) {
+       AppointmentDetails delAppointment = appointmentTableView.getSelectionModel().getSelectedItem();
+       if (delAppointment != null){
+           insertOrUpdateOrDeleteSQL("delete from U04FGv.appointment where appointmentId ="+delAppointment.getAppointmentId()+"");
+           Utils utils = new Utils();
+           utils.successMessage.showSuccess("Succes", "Deleted!", "Appointment successfuly deleted!");
+       }else{
+           Utils utils = new Utils();
+           utils.errorMessage.showError("Error", "Delete Error","Please select an appointment then click 'Delete'");
+           Alert alert = new Alert(Alert.AlertType.ERROR);
+           alert.setTitle("Error");
+           alert.setHeaderText("Delete Error");
+           alert.setContentText("Please select an appointment then click 'Delete'");
+           alert.showAndWait();  
+       } 
     }
 
-     @FXML
+    /**
+     * Back to Dashboard
+     * @param event
+     * @throws IOException 
+     */
+    @FXML
     void back_clicked(ActionEvent event) throws IOException {
        FXMLLoader loader = new FXMLLoader();
        loader.setLocation(getClass().getResource("/View_Controller/dashboard/Dashboard.fxml"));
@@ -231,6 +353,10 @@ public class AppointmentController implements Initializable {
      */
     @Override
       public void initialize(URL url, ResourceBundle rb) {
+       btnEdit.setDisable(true);   
+       Tooltip editToolTip = new Tooltip();
+       editToolTip.setText("Double-click on row to edit");
+       appointmentTableView.setTooltip(editToolTip);
        DateTimeFormatter dateTimeF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
        DateTimeFormatter timeF = DateTimeFormatter.ofPattern("HH:mm:ss");
        DateTimeFormatter ampmTimeF = DateTimeFormatter.ofPattern("h:mm a");
@@ -241,6 +367,7 @@ public class AppointmentController implements Initializable {
         ObservableList<String> startTimeList = FXCollections.observableArrayList("9:00 AM","10:00 AM","11:00 AM","12:00 PM","1:00 PM","2:00 PM","3:00 PM","4:00 PM");
         ObservableList<String> endTimeList = FXCollections.observableArrayList("10:00 AM","11:00 AM","12:00 PM","1:00 PM","2:00 PM","3:00 PM","4:00 PM","5:00 PM");
 
+       //Event Handler for
        //No Scheduling outside of business days
         appointmentDatePicker.setValue(LocalDate.now());
         appointmentDatePicker.setOnAction(new EventHandler() {
@@ -249,16 +376,17 @@ public class AppointmentController implements Initializable {
                    LocalDate date = appointmentDatePicker.getValue();
                    DayOfWeek day = date.getDayOfWeek();
                         if(date.isBefore(LocalDate.now()) || day.equals(day.SATURDAY) || day.equals(day.SUNDAY)){ 
-                            btnSave.setDisable(true);
-                           System.err.println("no weekends or date before today please!");
-                           //TODO dialogs
-                        }else{
-                          btnSave.setDisable(false);
+                            //btnSave.setDisable(true);
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("Error");
+                            alert.setHeaderText("Date Error");
+                            alert.setContentText("no weekends or date before today please!");
+                            alert.showAndWait();
+                            appointmentDatePicker.setValue(LocalDate.now());
                         }
                 }
         });
-        //
-        //Pre-populate the form field upon double-clicking cell row for editing
+        //Method to Pre-populate the form field upon double-clicking cell row for editing
         appointmentTableView.setRowFactory(tv -> {
             TableRow<AppointmentDetails> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
@@ -266,9 +394,9 @@ public class AppointmentController implements Initializable {
                     AppointmentDetails rowData = row.getItem();
                     //get id of selected customer
                     selectedAppointmentId = rowData.getAppointmentId();
-                    btnSave.setDisable(true);
                     cbxCustomerName.setValue(rowData.getCustomerName());
                     chbxType.setValue(rowData.getType());
+                    btnSave.setDisable(true);
                     selectSQL("select start, end from U04FGv.appointment where appointmentId = " +selectedAppointmentId+"");
                     try {
                         while(resultSet.next()){
@@ -285,13 +413,16 @@ public class AppointmentController implements Initializable {
                            LocalTime endTime = defaultEnd.toLocalTime();
                            String sTime = startTime.format(ampmTimeF);
                            String eTime = endTime.format(ampmTimeF);
-                           if(date.isBefore(LocalDate.now())){
-                              System.out.println("Cannot edit this appointment, already been proccessed"); 
-                              btnEdit.setDisable(true);
+                           if(date.isBefore(LocalDate.now())){  
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setTitle("Error");
+                                alert.setHeaderText("Edit Error");
+                                alert.setContentText("Cannot edit this appointment, already been proccessed");
+                                alert.showAndWait();
+                                btnEdit.setDisable(true);
                            }else{
                             appointmentDatePicker.setValue(date);
                             btnEdit.setDisable(false);
-                            btnSave.setDisable(true);
                            }
                            cbxStartTime.setValue(sTime);
                            cbxEndTime.setValue(eTime);
@@ -300,14 +431,12 @@ public class AppointmentController implements Initializable {
                         System.out.println("Error loading datetime from DB "+ ex);
                     } 
                     
-                    System.out.println("Double click on: "+rowData.getCustomerName());
                 }
             });
             return row ;
         });
         
-         
-        //Loading Customer from database
+       //Loading Customer from database
         selectSQL("select customerName from U04FGv.customer");
         try{
             while(resultSet.next()){
@@ -327,7 +456,7 @@ public class AppointmentController implements Initializable {
         cbxEndTime.setItems(endTimeList);
         cbxEndTime.setValue(endTimeList.get(0));
         
-       
+       //Initializing columns
        col_apptId.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
        col_customerName.setCellValueFactory(new PropertyValueFactory<>("customerName"));
        col_type.setCellValueFactory(new PropertyValueFactory<>("type"));
@@ -379,5 +508,5 @@ public class AppointmentController implements Initializable {
         }
        
     } 
-          
+      
 }
