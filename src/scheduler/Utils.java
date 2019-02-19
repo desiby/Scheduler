@@ -10,6 +10,9 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Alert;
+import javafx.scene.layout.AnchorPane;
 
 /**
  *
@@ -31,7 +34,6 @@ public class Utils {
        //keeps track of user
        public static String userSession;
 
-       
        
        /**
         * Create a connection
@@ -89,5 +91,29 @@ public class Utils {
          conn = null;
          System.out.println("Connection successfuly closed!");
        }
-    
+ 
+       //LAMBDA EXPRESSION, METHOD TO FACILITATE NAVIGATION
+       public Inavigation navigate = (anchorPane, path) -> {
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(getClass().getResource(path));
+            AnchorPane pane = loader.load();
+            anchorPane.getChildren().setAll(pane);
+          };
+       
+       //LAMBDA EXPRESSION, METHODS TO ORGANIZE MESSAGE DIALOGS
+       public IErrorMessage errorMessage = (title, header, message) ->{
+         Alert alert = new Alert(Alert.AlertType.ERROR);
+          alert.setTitle(title);
+          alert.setHeaderText(header);
+          alert.setContentText(message);
+          alert.showAndWait();
+       };
+       
+       public IsuccessMessage successMessage = (title, header, message) ->{
+         Alert alert = new Alert(Alert.AlertType.INFORMATION);
+          alert.setTitle(title);
+          alert.setHeaderText(header);
+          alert.setContentText(message);
+          alert.showAndWait();
+       };
 }
