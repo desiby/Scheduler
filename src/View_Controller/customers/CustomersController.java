@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
+import java.util.regex.Pattern;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -39,37 +40,36 @@ public class CustomersController implements Initializable{
     @FXML
     private AnchorPane customerPane;
    
-//tableview and tcol declaration
-@FXML
-private TableView<CustomerDetails> customerDataTableView;
-@FXML
-private TableColumn<CustomerDetails, String> col_addr;
-@FXML
-private TableColumn<CustomerDetails, String> col_postalCode;
-@FXML
-private TableColumn<CustomerDetails, LocalDate> col_createDate;
-@FXML
-private TableColumn<CustomerDetails, LocalDate> col_lastUpdate;
-@FXML
-private TableColumn<CustomerDetails, Integer> col_active;
-@FXML
-private TableColumn<CustomerDetails, Integer> col_custId;
-@FXML
-private TableColumn<CustomerDetails, String> col_city;
-@FXML
-private TableColumn<CustomerDetails, String> col_phone;
-@FXML
-private TableColumn<CustomerDetails, String> col_addr2;
-@FXML
-private TableColumn<CustomerDetails, String> col_name;
+    //tableview and tcol declaration
+    @FXML
+    private TableView<CustomerDetails> customerDataTableView;
+    @FXML
+    private TableColumn<CustomerDetails, String> col_addr;
+    @FXML
+    private TableColumn<CustomerDetails, String> col_postalCode;
+    @FXML
+    private TableColumn<CustomerDetails, LocalDate> col_createDate;
+    @FXML
+    private TableColumn<CustomerDetails, LocalDate> col_lastUpdate;
+    @FXML
+    private TableColumn<CustomerDetails, Integer> col_active;
+    @FXML
+    private TableColumn<CustomerDetails, Integer> col_custId;
+    @FXML
+    private TableColumn<CustomerDetails, String> col_city;
+    @FXML
+    private TableColumn<CustomerDetails, String> col_phone;
+    @FXML
+    private TableColumn<CustomerDetails, String> col_addr2;
+    @FXML
+    private TableColumn<CustomerDetails, String> col_name;
 
-//textfields
-   @FXML
+    //textfields
+    @FXML
     private TextField txtCustomerName;
 
     @FXML
     private TextField txtAddressId;
-
 
     @FXML
     private TextField txtLastUpdateBy; 
@@ -113,7 +113,7 @@ private TableColumn<CustomerDetails, String> col_name;
     private Button btnBack;
     
 
-    private ObservableList<CustomerDetails> customerList = FXCollections.observableArrayList();
+    private final ObservableList<CustomerDetails> customerList = FXCollections.observableArrayList();
     
     CustomerDetails customer = null;
     
@@ -177,10 +177,10 @@ private TableColumn<CustomerDetails, String> col_name;
      * @param event 
      */
     @FXML
-    void btnSaveCustomer_clicked(ActionEvent event) throws SQLException{
+    void btnSaveCustomer_clicked(ActionEvent event) throws Exception{
       
-      int resultCustomer;
-      int resultAddress;
+      int resultCustomer = 0;
+      int resultAddress = 0;
      
         
       String name = txtCustomerName.getText();
@@ -194,6 +194,8 @@ private TableColumn<CustomerDetails, String> col_name;
       int addrId = 0;
       int cityId = 0;
       
+      
+      
       if (city != null){
          selectSQL("SELECT cityId from U04FGv.city Where city = "+"'"+city+"';" );
         try {
@@ -206,7 +208,18 @@ private TableColumn<CustomerDetails, String> col_name;
         }
       }
       
-      resultAddress = insertOrUpdateOrDeleteSQL("INSERT INTO U04FGv.address "
+      //HANDLE NON-EXISTENT OR INVALID CUSTOMER DATA (PHONE NUMBER) 
+      //WITH EXCEPTION HANDLER
+      try{
+        boolean isPhoneValid = Pattern.matches("^\\d{3}-\\d{3}-\\d{4}$", phone);
+        if(!isPhoneValid){
+          Utils utils = new Utils();
+          utils.errorMessage.showError("Invlaid", "Invalid Phone Number", 
+           "Invalid phone number, please make sure phone number\nmatches format xxx-xxx-xxxx");
+          clearForm();
+          throw new Exception("Invalid phone number Exception");
+        }else{
+           resultAddress = insertOrUpdateOrDeleteSQL("INSERT INTO U04FGv.address "
                   + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) "
                   + "VALUES("
                   +"'"+address+"',"
@@ -219,14 +232,13 @@ private TableColumn<CustomerDetails, String> col_name;
                   +"'"+LocalDate.now()+"',"+"'"
                   +userSession+"')");
           
-          selectSQL("select last_insert_id() as lastID;");
+           selectSQL("select last_insert_id() as lastID;");
          
-          while(resultSet.next()){
-             int id = resultSet.getInt("lastID");
-             addrId = id; //global variable to grab the address id
-             System.out.println("id is "+ addrId);
-          }
-          
+            while(resultSet.next()){
+               int id = resultSet.getInt("lastID");
+               addrId = id; //global variable to grab the address id
+               System.out.println("id is "+ addrId);
+            }
           
           resultCustomer = insertOrUpdateOrDeleteSQL("INSERT INTO U04FGv.customer (customerName, addressId, "
                   + "active, createDate, createdBy, lastUpdateBy) "
@@ -240,6 +252,11 @@ private TableColumn<CustomerDetails, String> col_name;
                     
            System.out.println(resultCustomer+","+resultAddress+" rows modified");
            clearForm();
+        }  
+      }catch(Exception e){
+         System.err.println(e);
+      }
+      
 
 }
     /**
@@ -257,6 +274,7 @@ private TableColumn<CustomerDetails, String> col_name;
         ObservableList<String> cityOptions = FXCollections.observableArrayList();
         ObservableList<String> activeOptions = FXCollections.observableArrayList("0","1");
         cbxActive.setItems(activeOptions);
+        cbxActive.setValue(activeOptions.get(0));
         
         col_name.setCellValueFactory(new PropertyValueFactory<>("customerName"));
         col_custId.setCellValueFactory(new PropertyValueFactory<>("customerId"));
@@ -346,7 +364,7 @@ private TableColumn<CustomerDetails, String> col_name;
     }
    
      @FXML
-    void btnEditCustomer_clicked(ActionEvent event) throws SQLException {
+     void btnEditCustomer_clicked(ActionEvent event) throws SQLException {
          
          String name = txtCustomerName.getText();
          String address = txtAddress.getText();
@@ -410,7 +428,6 @@ private TableColumn<CustomerDetails, String> col_name;
             System.out.println(addrStatement.executeUpdate()+ " address updated");
             
             clearForm();
-        
     }
     
     public void clearForm(){
