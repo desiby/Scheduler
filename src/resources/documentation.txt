@@ -1,1 +1,16 @@
+      BEFORE RUNNING THE PROJECT:
+     
+  1/  The file "updateDB.sql" will update the database per requirement.
+      Load and execute this file in Mysql workbench.
+ 
+  2/ "dummyData.sql" has the initial dummy data for this project.
+      Load and execute this file in Mysql workbench
 
+
+      ALL REPORT FILES ARE LOCATED IN THE RESOURCE FOLDER
+  
+  1/ The number of appointment type by month report is located in the "appt.txt" file
+
+  2/ The schedule for each consultant report is located in the "schedule.txt"
+
+  3/ All user logging activities located in the logging.txt
