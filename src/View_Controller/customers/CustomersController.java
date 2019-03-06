@@ -18,7 +18,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
@@ -165,11 +164,8 @@ public class CustomersController implements Initializable{
         insertOrUpdateOrDeleteSQL("delete from U04FGv.customer where customerName = " + "'"+customer.getCustomerName()+"'"+""); 
         insertOrUpdateOrDeleteSQL("delete from U04FGv.address where addressId =" +selAddrId+"");
         
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Delete");
-        alert.setHeaderText("Delete");
-        alert.setContentText("Customer details successfuly deleted!");
-        alert.showAndWait(); 
+        Utils utils = new Utils();
+        utils.successMessage.showSuccess("Delete", "Success Delete!", "Customer details successfuly deleted!");
      }    
     } 
     /**
@@ -178,11 +174,10 @@ public class CustomersController implements Initializable{
      */
     @FXML
     void btnSaveCustomer_clicked(ActionEvent event) throws Exception{
-      
+      //intialize result of queries
       int resultCustomer = 0;
       int resultAddress = 0;
-     
-        
+      //grabbing values from fiels from the form
       String name = txtCustomerName.getText();
       String address = txtAddress.getText();
       String address2 = txtAddress2.getText();
@@ -191,11 +186,11 @@ public class CustomersController implements Initializable{
       int active = Integer.parseInt(cbxActive.getValue());
       String city = cbxCity.getValue();
       
+      //tracking addressId and cityId
       int addrId = 0;
       int cityId = 0;
       
-      
-      
+      //grabbing the cityId from value of city entered on the form
       if (city != null){
          selectSQL("SELECT cityId from U04FGv.city Where city = "+"'"+city+"';" );
         try {
@@ -207,17 +202,21 @@ public class CustomersController implements Initializable{
             System.out.println("Error loading cityId from DB "+ ex);
         }
       }
-      
-      //HANDLE NON-EXISTENT OR INVALID CUSTOMER DATA (PHONE NUMBER) 
-      //WITH EXCEPTION HANDLER
+      /**
+       * HANDLE NON-EXISTENT OR INVALID CUSTOMER DATA
+        WITH EXCEPTION HANDLER
+        all fields should not be empty, 
+        phone number should b in format xxx-xxx-xxxx
+        postal code should be a number in format xxxxx
+       */  
       try{
         boolean isPhoneValid = Pattern.matches("^\\d{3}-\\d{3}-\\d{4}$", phone);
-        if(!isPhoneValid){
+        boolean isPostalCodeValid = Pattern.matches("^\\d{5}$", postalCode);
+        if(!isPhoneValid || name.equals("") || address.equals("") || !isPostalCodeValid){
           Utils utils = new Utils();
-          utils.errorMessage.showError("Invlaid", "Invalid Phone Number", 
-           "Invalid phone number, please make sure phone number\nmatches format xxx-xxx-xxxx");
-          clearForm();
-          throw new Exception("Invalid phone number Exception");
+          utils.errorMessage.showError("Invalid", "Invalid Data", 
+           "Invalid Data, please check all fields!");
+          throw new Exception("Invalid Data entered in form fields");
         }else{
            resultAddress = insertOrUpdateOrDeleteSQL("INSERT INTO U04FGv.address "
                   + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) "
@@ -231,7 +230,8 @@ public class CustomersController implements Initializable{
                   +"'"+userSession+"',"
                   +"'"+LocalDate.now()+"',"+"'"
                   +userSession+"')");
-          
+           
+           //grab the last id from address inserted
            selectSQL("select last_insert_id() as lastID;");
          
             while(resultSet.next()){
@@ -251,14 +251,17 @@ public class CustomersController implements Initializable{
                   +"'"+userSession+"')");
                     
            System.out.println(resultCustomer+","+resultAddress+" rows modified");
+           Utils utils = new Utils();
+           utils.successMessage.showSuccess("success", "save!", "Customer successfuly saved");
            clearForm();
+           //empty tableview then re-initialize
+           customerList.removeAll(customerList);
+           reinitialize();
         }  
       }catch(Exception e){
          System.err.println(e);
       }
-      
-
-}
+  }
     /**
     * initialize method
     * @param location
@@ -266,16 +269,120 @@ public class CustomersController implements Initializable{
     */ 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-  
+     reinitialize();
+    }
+   
+    /**
+     * Edit a customer
+     * @param event
+     * @throws SQLException 
+     */
+     @FXML
+     void btnEditCustomer_clicked(ActionEvent event) throws SQLException {
+         String name = txtCustomerName.getText();
+         String address = txtAddress.getText();
+         String address2 = txtAddress2.getText();
+         String postalCode = txtPostalCode.getText();
+         String phone = txtPhoneNumber.getText();
+         int active = Integer.parseInt(cbxActive.getValue());
+         String city = cbxCity.getValue();
+         
+         int cityId = 0;
+         
+         ///grab cityId from from fields
+         if (city != null){
+         selectSQL("SELECT cityId from U04FGv.city Where city = "+"'"+city+"';" );
+            try {
+                while(resultSet.next()){
+                  int id = resultSet.getInt("cityId");
+                  cityId = id;
+                }
+            } catch (SQLException ex) {
+                System.out.println("Error loading cityId from DB <from Edit Method> "+ ex);
+            }
+         }
+        //Grab addressId from selectedCustomer where customerId is the one from customer selected
+        selectSQL("SELECT addressId from U04FGv.customer WHERE customerId = "+selectedCustomerId+";" ); 
+            try {
+                while(resultSet.next()){
+                  selectedAddressId = resultSet.getInt("addressId");
+                }
+            } catch (SQLException ex) {
+                System.out.println("Error! cannot get addressId of selected customer "+ ex);
+            }
+ 
+            //check whether data are valid before editing
+            try{
+               boolean isPhoneValid = Pattern.matches("^\\d{3}-\\d{3}-\\d{4}$", phone);
+               boolean isPostalCodeValid = Pattern.matches("^\\d{5}$", postalCode);
+                 if(!isPhoneValid || name.equals("") || address.equals("") || !isPostalCodeValid){
+                   Utils utils = new Utils();
+                   utils.errorMessage.showError("Invalid", "Invalid Data", "Invalid Data, please check all fields!");
+                   throw new Exception("Invalid Data entered in form fields");
+                 }else{
+                   PreparedStatement myStatement = Utils.conn.prepareStatement("update U04FGv.customer set customerName = ?, "
+                    + "addressId =?, active =?,"
+                    +"lastUpdate =?,lastUpdateBy = ? where customerId = ?");
+                    DateTimeFormatter myDate = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    myStatement.setString(1, name );
+                    myStatement.setInt(2,selectedAddressId);
+                    myStatement.setInt(3,active);
+                    myStatement.setString(4,LocalDateTime.now().format(myDate));
+                    myStatement.setString(5,userSession);
+                    myStatement.setInt(6, selectedCustomerId);
+            
+                    myStatement.executeUpdate();
+                    
+                  PreparedStatement addrStatement = Utils.conn.prepareStatement("update U04FGv.address set address = ?, address2 = ?,"
+                    + "cityId = ?,"+"phone = ?,"
+                    + "postalCode = ?,"
+                    + "lastUpdate =?, lastUpdateBy = ? where addressId = ? ");
+                    DateTimeFormatter addrDate = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    addrStatement.setString(1, address);
+                    addrStatement.setString(2, address2);
+                    addrStatement.setInt(3, cityId);
+                    addrStatement.setString(4, phone);
+                    addrStatement.setString(5, postalCode);
+                    addrStatement.setString(6,LocalDateTime.now().format(addrDate));
+                    addrStatement.setString(7, userSession);
+                    addrStatement.setInt(8,selectedAddressId );
+                    Utils utils = new Utils();
+                    utils.successMessage.showSuccess("Success", "Edit Success", "Customer successfuly updated!");
+                    addrStatement.executeUpdate();
+                    clearForm();
+                    //empty tableview then re-initialize
+                    customerList.removeAll(customerList);
+                    reinitialize();
+                 }
+            }catch(Exception e){
+              System.err.println(e);
+            }         
+    }
+   //Clear form
+    public void clearForm(){
+      selectedCustomerId = 0;
+                    btnSaveCustomer.setDisable(false);
+                    txtCustomerName.setText("");
+                    txtAddress.setText("");
+                    txtAddress2.setText("");
+                    cbxCity.setValue("");
+                    txtPhoneNumber.setText("");
+                    txtPostalCode.setText("");
+                    cbxActive.setValue(String.valueOf(0));
+    }
+   
+    public void reinitialize(){
+        //set a tooltip to guide user how to edit a customer 
         Tooltip editToolTip = new Tooltip();
         editToolTip.setText("Double-click on row to edit");
         customerDataTableView.setTooltip(editToolTip);
         
+        //define Lists and initialize boxes
         ObservableList<String> cityOptions = FXCollections.observableArrayList();
         ObservableList<String> activeOptions = FXCollections.observableArrayList("0","1");
         cbxActive.setItems(activeOptions);
         cbxActive.setValue(activeOptions.get(0));
-        
+        //initialize tablecolumns
         col_name.setCellValueFactory(new PropertyValueFactory<>("customerName"));
         col_custId.setCellValueFactory(new PropertyValueFactory<>("customerId"));
         col_addr.setCellValueFactory(new PropertyValueFactory<>("address"));
@@ -286,7 +393,8 @@ public class CustomersController implements Initializable{
         col_active.setCellValueFactory(new PropertyValueFactory<>("active"));
         col_createDate.setCellValueFactory(new PropertyValueFactory<>("createDate"));
         col_lastUpdate.setCellValueFactory(new PropertyValueFactory<>("lastUpdate"));
-          
+       
+        //Load data in tableview
         selectSQL("select customer.customerId, customer.customerName, customer.addressId, customer.active, \n" +
 "	   address.addressId, address.address, address.address2, \n" +
 "       city.cityId, address.cityId, city.city,  \n" +
@@ -295,7 +403,7 @@ public class CustomersController implements Initializable{
 "inner join U04FGv.address\n" +
 "on customer.addressId = address.addressId\n" +
 "inner join U04FGv.city\n" +
-"on city.cityId = address.addressId;");
+"on city.cityId = address.cityId;");
     
         try {
             while(resultSet.next()){
@@ -330,7 +438,7 @@ public class CustomersController implements Initializable{
             String city = resultSet.getString("city");
             cityOptions.add(city);
           }  
-        }catch(Exception ex){
+        }catch(SQLException ex){
           System.out.println("Error while loading cities "+ex);
         }
         
@@ -361,84 +469,7 @@ public class CustomersController implements Initializable{
             });
             return row ;
         });
-    }
-   
-     @FXML
-     void btnEditCustomer_clicked(ActionEvent event) throws SQLException {
-         
-         String name = txtCustomerName.getText();
-         String address = txtAddress.getText();
-         String address2 = txtAddress2.getText();
-         String postalCode = txtPostalCode.getText();
-         String phone = txtPhoneNumber.getText();
-         int active = Integer.parseInt(cbxActive.getValue());
-         String city = cbxCity.getValue();
-         
-         int cityId = 0;
-         
-         ///grab cityId from from fields
-         if (city != null){
-         selectSQL("SELECT cityId from U04FGv.city Where city = "+"'"+city+"';" );
-            try {
-                while(resultSet.next()){
-                  int id = resultSet.getInt("cityId");
-                  cityId = id;
-                }
-            } catch (SQLException ex) {
-                System.out.println("Error loading cityId from DB <from Edit Method> "+ ex);
-            }
-         }
-        //Grab addressId from selectedCustomer where customerId is the one from customer selected
-        selectSQL("SELECT addressId from U04FGv.customer WHERE customerId = "+selectedCustomerId+";" ); 
-            try {
-                while(resultSet.next()){
-                  selectedAddressId = resultSet.getInt("addressId");
-                }
-            } catch (SQLException ex) {
-                System.out.println("Error! cannot get addressId of selected customer "+ ex);
-            }
- 
-            PreparedStatement myStatement = Utils.conn.prepareStatement("update U04FGv.customer set customerName = ?, "
-                    + "addressId =?, active =?,"
-                    +"lastUpdate =?,lastUpdateBy = ? where customerId = ?");
-            DateTimeFormatter myDate = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            myStatement.setString(1, name );
-            myStatement.setInt(2,selectedAddressId);
-            myStatement.setInt(3,active);
-            myStatement.setString(4,LocalDateTime.now().format(myDate));
-            myStatement.setString(5,userSession);
-            myStatement.setInt(6, selectedCustomerId);
-            
-            System.out.println(myStatement.executeUpdate()+ " customer updated");
-            
-            PreparedStatement addrStatement = Utils.conn.prepareStatement("update U04FGv.address set address = ?, address2 = ?,"
-                    + "cityId = ?,"+"phone = ?,"
-                    + "postalCode = ?,"
-                    + "lastUpdate =?, lastUpdateBy = ? where addressId = ? ");
-            DateTimeFormatter addrDate = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            addrStatement.setString(1, address);
-            addrStatement.setString(2, address2);
-            addrStatement.setInt(3, cityId);
-            addrStatement.setString(4, phone);
-            addrStatement.setString(5, postalCode);
-            addrStatement.setString(6,LocalDateTime.now().format(addrDate));
-            addrStatement.setString(7, userSession);
-            addrStatement.setInt(8,selectedAddressId );
-            
-            System.out.println(addrStatement.executeUpdate()+ " address updated");
-            
-            clearForm();
+
     }
     
-    public void clearForm(){
-      selectedCustomerId = 0;
-                    btnSaveCustomer.setDisable(false);
-                    txtCustomerName.setText("");
-                    txtAddress.setText("");
-                    txtAddress2.setText("");
-                    cbxCity.setValue("");
-                    txtPhoneNumber.setText("");
-                    txtPostalCode.setText("");
-                    cbxActive.setValue(String.valueOf(0));
-    }
 }
