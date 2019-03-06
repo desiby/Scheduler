@@ -1,16 +1,31 @@
-      BEFORE RUNNING THE PROJECT:
-     
-  1/  The file "updateDB.sql" will update the database per requirement.
+      
+----------------BEFORE RUNNING THE PROJECT:
+  
+  1/mysql jdbc connector needs to be added in your libraries folder
+    https://dev.mysql.com/downloads/connector/j/
+  
+  2/ open Utils.java and use your own connection string 
+  
+  3/  The file "updateDB.sql" will update the database per requirements.
       Load and execute this file in Mysql workbench.
- 
-  2/ "dummyData.sql" has the initial dummy data for this project.
-      Load and execute this file in Mysql workbench
+
+  4/The application will use the following credential from "dummyData.sql" file to login:
+        username: jack
+        password: password
+    Load and Execute dummyData.sql" in MySQL Workbench before running and logging in. 
+    You can add an additional user in the query file if you wish.
 
 
-      ALL REPORT FILES ARE LOCATED IN THE RESOURCE FOLDER
+----------------ALL REPORT FILES ARE LOCATED IN THE RESOURCES FOLDER
   
   1/ The number of appointment type by month report is located in the "appt.txt" file
 
   2/ The schedule for each consultant report is located in the "schedule.txt"
 
   3/ All user logging activities located in the logging.txt
+
+------------------LAMBAS EXAMPLES
+all lambdas and in-line comments are in the Utils.java files:
+1. Lambda for navigation called naviagateTo()
+2. lambda for error dialog message, called showError()
+3. Lambda for success message , called showSuccess()
